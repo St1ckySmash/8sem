@@ -1,32 +1,34 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp
+from scipy.integrate import odeint
+
+# Определяем параметры
+N = 10
+b_values = [0.1, 0.5, 1.0]
+
+# Исходное значение
+x0 = 0.01
 
 
 # Дифференциальное уравнение
-def population_growth(t, x, b, N):
-    return (b * x**2) / (N + x)
+def population_model(x, t, b):
+    dxdt = (b * x**2) / (N + x)
+    return dxdt
 
 
-# Параметры
-N = 100
-b_values = [1, 2]
-x0 = 2  # начальное условие
+# Временной интервал
+t = np.linspace(0, 50, 500)
 
-# Время для решения
-t_span = (0, 30)
-t_eval = np.linspace(t_span[0], t_span[1], 400)
-
-# Решение уравнения и построение графиков
+# Построение графика для разных значений b
 plt.figure(figsize=(10, 6))
 
 for b in b_values:
-    sol = solve_ivp(population_growth, t_span, [x0], args=(b, N), t_eval=t_eval)
-    plt.plot(sol.t, sol.y[0], label=f"b = {b}")
+    sol = odeint(population_model, x0, t, args=(b,))
+    plt.plot(t, sol, label=f"b = {b}")
 
-plt.title("График зависимости x от времени t при различных значениях b")
-plt.xlabel("Время t")
-plt.ylabel("Число особей x")
+plt.xlabel("Время (t)")
+plt.ylabel("Число особей (x)")
+plt.title("Зависимость числа особей от времени")
 plt.legend()
 plt.grid(True)
 plt.show()
