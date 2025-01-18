@@ -1,21 +1,29 @@
 import math
 
 
+def create_matrix(text, key, num_columns, num_rows):
+    matrix = [""] * num_rows
+    for i in range(len(text)):
+        row = i // num_columns
+        col = i % num_columns
+        matrix[row] += text[i]
+    return matrix
+
+
 def encrypt(text, key):
     key_unique = "".join(sorted(set(key), key=lambda x: key.index(x)))
     num_columns = len(key_unique)
     num_rows = math.ceil(len(text) / num_columns)
 
-    # Заполняем матрицу символами
-    matrix = [""] * num_columns
-    for i, char in enumerate(text):
-        matrix[i % num_columns] += char
+    matrix = create_matrix(text, key, num_columns, num_rows)
 
-    # Создаем кортежи (буква ключа, соответствующий столбец)
-    transposed = sorted(zip(key_unique, matrix))
+    transposed = sorted(zip(key_unique, range(num_columns)))
 
-    # Переставляем столбцы и объединяем их в зашифрованный текст
-    encrypted_text = "".join("".join(col for _, col in transposed))
+    encrypted_text = ""
+    for _, col in transposed:
+        for row in matrix:
+            if col < len(row):
+                encrypted_text += row[col]
     return encrypted_text
 
 
@@ -25,33 +33,32 @@ def decrypt(cipher, key):
     num_rows = math.ceil(len(cipher) / num_columns)
     shaded_boxes = (num_columns * num_rows) - len(cipher)
 
-    # Длина каждого столбца
     col_lengths = [num_rows] * num_columns
     for i in range(shaded_boxes):
         col_lengths[-(i + 1)] -= 1
 
-    # Заполняем матрицу символами
     columns = [""] * num_columns
     start = 0
     for i, length in enumerate(col_lengths):
         columns[i] = cipher[start : start + length]
         start += length
 
-    # Создаем кортежи (буква ключа, соответствующий столбец) и сортируем их
-    transposed = sorted(zip(key_unique, columns))
+    sorted_key_indices = sorted(range(len(key_unique)), key=lambda k: key_unique[k])
+    transposed = [""] * num_columns
+    for i, idx in enumerate(sorted_key_indices):
+        transposed[idx] = columns[i]
 
-    # Читаем текст по строкам, чтобы расшифровать его
     plaintext = ""
-    for i in range(num_rows):
-        for _, col in transposed:
-            if i < len(col):
-                plaintext += col[i]
+    for r in range(num_rows):
+        for col in transposed:
+            if r < len(col):
+                plaintext += col[r]
     return plaintext
 
 
 # Пример использования
 text = "Привет, мир! я тут надолго ало да да во во во "
-key = "кляча"
+key = "ключ"
 
 encrypted_text = encrypt(text, key)
 print(f"Зашифрованный текст: {encrypted_text}")
