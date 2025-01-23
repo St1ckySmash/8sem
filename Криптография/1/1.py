@@ -13,17 +13,6 @@ def select_file(path_label):
     return file_path
 
 
-def select_save_file(path_label):
-    file_path = filedialog.asksaveasfilename(
-        defaultextension=".txt",
-        filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-    )
-    if file_path:
-        path_label.config(text=file_path)
-    update_button_states()
-    return file_path
-
-
 def update_button_states():
     open_text_path = open_text_path_label.cget("text")
     key_path = key_path_label.cget("text")
@@ -125,12 +114,10 @@ def decrypt_text():
         result_text.insert(tk.END, decrypted_text)
 
 
-# Создание основного окна
 root = tk.Tk()
 root.title("Шифрование и Расшифровка")
-root.geometry("1300x600")  # Устанавливаем размер окна
+root.geometry("1300x600")
 
-# Использование стилей ttk
 style = ttk.Style()
 style.configure(
     "TButton",
@@ -155,7 +142,6 @@ style.configure(
 )
 style.configure("TFrame", padding=6, relief="flat", background="#94d2bd")
 
-# Создание и размещение виджетов
 frame = ttk.Frame(root)
 frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
@@ -208,7 +194,7 @@ save_encrypt_file_label.pack(anchor="w", pady=5)
 save_encrypt_file_button = ttk.Button(
     right_frame,
     text="Выбрать файл",
-    command=lambda: select_save_file(save_encrypt_path_label),
+    command=lambda: select_file(save_encrypt_path_label),
 )
 save_encrypt_file_button.pack(anchor="w")
 save_encrypt_path_label = ttk.Label(right_frame, text="")
@@ -221,7 +207,7 @@ save_decrypt_file_label.pack(anchor="w", pady=5)
 save_decrypt_file_button = ttk.Button(
     right_frame,
     text="Выбрать файл",
-    command=lambda: select_save_file(save_decrypt_path_label),
+    command=lambda: select_file(save_decrypt_path_label),
 )
 save_decrypt_file_button.pack(anchor="w")
 save_decrypt_path_label = ttk.Label(right_frame, text="")
@@ -232,12 +218,10 @@ result_label.pack(anchor="w", pady=5)
 result_text = tk.Text(right_frame, height=5, width=50, bg="#e9d8a6", fg="#001219")
 result_text.pack(anchor="w", padx=10, pady=10)
 
-# Добавим новый текстовый виджет для логов
 log_text = tk.Text(right_frame, height=10, width=50, bg="#f0e68c", fg="#001219")
 log_text.pack(anchor="w", padx=10, pady=10)
 
 
-# Функция для перенаправления вывода в лог
 class TextRedirector(object):
     def __init__(self, widget, tag="stdout"):
         self.widget = widget
@@ -265,5 +249,4 @@ decrypt_button = ttk.Button(
 )
 decrypt_button.pack(anchor="w", pady=10)
 
-# Запуск основного цикла приложения
 root.mainloop()

@@ -1,4 +1,16 @@
 import math
+import random
+import string
+
+
+def random_char_or_digit():
+    russian_letters_upper = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+    russian_letters_lower = russian_letters_upper.lower()
+    english_letters = string.ascii_letters  # Включает и большие, и маленькие буквы
+    all_characters = (
+        russian_letters_upper + russian_letters_lower + english_letters + string.digits
+    )
+    return random.choice(all_characters)
 
 
 def create_matrix(text, key, num_columns, num_rows, logger=print):
@@ -7,13 +19,10 @@ def create_matrix(text, key, num_columns, num_rows, logger=print):
         row = i // num_columns
         matrix[row] += text[i]
     while len(matrix[-1]) < num_columns:
-        matrix[
-            -1
-        ] += "а"  # добавить рандом буквы тут и вообще ограничить алфавит, убирать пробелы
-    logger("МАТРИЦА:\n" + "=" * len(matrix[0]))
+        matrix[-1] += random_char_or_digit()
+    logger("Созданная матрица:")
     for s in matrix:
         logger(s)
-    logger("=" * len(matrix[0]))
     return matrix
 
 
@@ -28,40 +37,40 @@ def encrypt(text, key, logger=print):
     matrix = create_matrix(text, key, num_columns, num_rows, logger)
 
     transposed = sorted(zip(key_unique, range(num_columns)))
+    logger("Сортировка ключа и индексы столбцов:")
     logger(transposed)
 
     encrypted_text = ""
     for _, col in transposed:
         for row in matrix:
-            if col < len(row):
-                encrypted_text += row[col]
+            encrypted_text += row[col]
     return encrypted_text
 
 
 def decrypt(cipher, key, logger=print):
+    key = key.replace(" ", "")
     key_unique = "".join(sorted(set(key), key=lambda x: key.index(x)))
     num_columns = len(key_unique)
     num_rows = math.ceil(len(cipher) / num_columns)
-    shaded_boxes = (num_columns * num_rows) - len(cipher)
 
-    col_lengths = [num_rows] * num_columns
-    for i in range(shaded_boxes):
-        col_lengths[-(i + 1)] -= 1
+    transposed = sorted(zip(key_unique, range(num_columns)))
+    logger("Сортировка ключа и индексы столбцов:")
+    logger(transposed)
 
-    columns = [""] * num_columns
-    start = 0
-    for i, length in enumerate(col_lengths):
-        columns[i] = cipher[start : start + length]
-        start += length
+    matrix = [["" for _ in range(num_columns)] for _ in range(num_rows)]
 
-    sorted_key_indices = sorted(range(len(key_unique)), key=lambda k: key_unique[k])
-    transposed = [""] * num_columns
-    for i, idx in enumerate(sorted_key_indices):
-        transposed[idx] = columns[i]
+    for i in range(num_columns):
+        _, col = transposed[i]
+        for j in range(num_rows):
+            matrix[j][col] = cipher[j + i * num_rows]
 
-    plaintext = ""
-    for r in range(num_rows):
-        for col in transposed:
-            if r < len(col):
-                plaintext += col[r]
-    return plaintext
+    decrypted_text = ""
+    logger("Созданная матрица:")
+    for i in range(len(matrix)):
+        s = ""
+        for el in matrix[i]:
+            s += el
+        logger(s)
+        decrypted_text += s
+
+    return decrypted_text
