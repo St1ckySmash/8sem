@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 import cipher
+import string
 
 
 def select_file(path_label):
@@ -52,9 +53,11 @@ def encrypt_text():
         return
 
     with open(path_to_open_text, encoding="utf-8") as f:
-        open_text = f.read().strip().replace("\t", "")
+        open_text = f.read()
+        open_text = "".join(i for i in open_text if i in cipher.ALL_CHARACTERS)
     with open(path_to_key, encoding="utf-8") as f:
-        key = f.read().strip().replace("\t", "")
+        key = f.read()
+        key = "".join(i for i in key if i in cipher.ALL_CHARACTERS)
 
     if open_text == "":
         messagebox.showerror("Ошибка", "Файл с текстом пуст")
@@ -91,9 +94,12 @@ def decrypt_text():
         return
 
     with open(path_to_cipher_text, encoding="utf-8") as f:
-        cipher_text = f.read().strip().replace("\t", "")
+        cipher_text = f.read()
+        cipher_text = "".join(i for i in cipher_text if i in cipher.ALL_CHARACTERS)
     with open(path_to_key, encoding="utf-8") as f:
-        key = f.read().strip().replace("\t", "")
+        key = f.read()
+        key = "".join(i for i in key if i in cipher.ALL_CHARACTERS)
+        print(key)
 
     if cipher_text == "":
         messagebox.showerror("Ошибка", "Файл с текстом пуст")

@@ -2,13 +2,23 @@ import math
 import random
 import string
 
+# Удалить английские символы, не добивать таблицу случайными значениями
+ALL_CHARACTERS = (
+    "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+    + "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".lower()
+    + string.digits
+    + string.punctuation
+)
+
 
 def random_char_or_digit():
     russian_letters_upper = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
     russian_letters_lower = russian_letters_upper.lower()
-    english_letters = string.ascii_letters  # Включает и большие, и маленькие буквы
     all_characters = (
-        russian_letters_upper + russian_letters_lower + english_letters + string.digits
+        russian_letters_upper
+        + russian_letters_lower
+        + string.digits
+        + string.punctuation
     )
     return random.choice(all_characters)
 
