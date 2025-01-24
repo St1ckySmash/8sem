@@ -53,10 +53,10 @@ def encrypt_text():
         return
 
     with open(path_to_open_text, encoding="utf-8") as f:
-        open_text = f.read()
+        open_text = f.read().lower()
         open_text = "".join(i for i in open_text if i in cipher.ALL_CHARACTERS)
     with open(path_to_key, encoding="utf-8") as f:
-        key = f.read()
+        key = f.read().lower()
         key = "".join(i for i in key if i in cipher.ALL_CHARACTERS)
 
     if open_text == "":
@@ -94,10 +94,10 @@ def decrypt_text():
         return
 
     with open(path_to_cipher_text, encoding="utf-8") as f:
-        cipher_text = f.read()
+        cipher_text = f.read().lower()
         cipher_text = "".join(i for i in cipher_text if i in cipher.ALL_CHARACTERS)
     with open(path_to_key, encoding="utf-8") as f:
-        key = f.read()
+        key = f.read().lower()
         key = "".join(i for i in key if i in cipher.ALL_CHARACTERS)
         print(key)
 
