@@ -76,6 +76,7 @@ def encrypt_text():
     else:
         result_text.delete(1.0, tk.END)
         result_text.insert(tk.END, encrypted_text)
+    log_text.insert(tk.END, f"Зашифрованный текст: {encrypted_text}\n")
 
 
 def decrypt_text():
@@ -118,6 +119,7 @@ def decrypt_text():
     else:
         result_text.delete(1.0, tk.END)
         result_text.insert(tk.END, decrypted_text)
+    log_text.insert(tk.END, f"Расшифрованный текст: {decrypted_text}\n")
 
 
 root = tk.Tk()
@@ -224,8 +226,27 @@ result_label.pack(anchor="w", pady=5)
 result_text = tk.Text(right_frame, height=5, width=50, bg="#e9d8a6", fg="#001219")
 result_text.pack(anchor="w", padx=10, pady=10)
 
+result_text_context_menu = tk.Menu(result_text, tearoff=0)
+result_text_context_menu.add_command(
+    label="Скопировать",
+    command=lambda: root.clipboard_append(result_text.get(1.0, tk.END)),
+)
+result_text.bind(
+    "<Button-3>",
+    lambda event: result_text_context_menu.post(event.x_root, event.y_root),
+)
+
 log_text = tk.Text(right_frame, height=10, width=50, bg="#f0e68c", fg="#001219")
 log_text.pack(anchor="w", padx=10, pady=10)
+
+log_text_context_menu = tk.Menu(log_text, tearoff=0)
+log_text_context_menu.add_command(
+    label="Скопировать",
+    command=lambda: root.clipboard_append(log_text.get(1.0, tk.END)),
+)
+log_text.bind(
+    "<Button-3>", lambda event: log_text_context_menu.post(event.x_root, event.y_root)
+)
 
 
 class TextRedirector(object):
