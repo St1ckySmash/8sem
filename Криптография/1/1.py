@@ -123,7 +123,7 @@ def decrypt_text():
 
 root = tk.Tk()
 root.title("Шифрование и Расшифровка")
-root.geometry("1300x600")
+root.geometry("1300x560")
 
 style = ttk.Style()
 style.configure(
@@ -222,7 +222,7 @@ save_decrypt_path_label.pack(anchor="w", pady=2)
 
 result_label = ttk.Label(right_frame, text="Результат:")
 result_label.pack(anchor="w", pady=5)
-result_text = tk.Text(right_frame, height=5, width=50, bg="#e9d8a6", fg="#001219")
+result_text = tk.Text(right_frame, height=2, width=50, bg="#e9d8a6", fg="#001219")
 result_text.pack(anchor="w", padx=10, pady=10)
 
 result_text_context_menu = tk.Menu(result_text, tearoff=0)
@@ -235,7 +235,7 @@ result_text.bind(
     lambda event: result_text_context_menu.post(event.x_root, event.y_root),
 )
 
-log_text = tk.Text(right_frame, height=10, width=50, bg="#f0e68c", fg="#001219")
+log_text = tk.Text(right_frame, height=12, width=50, bg="#f0e68c", fg="#001219")
 log_text.pack(anchor="w", padx=10, pady=10)
 
 log_text_context_menu = tk.Menu(log_text, tearoff=0)
