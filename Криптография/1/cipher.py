@@ -22,7 +22,7 @@ def random_char_or_digit():
     return random.choice(all_characters)
 
 
-def create_matrix(text, key, num_columns, num_rows, logger=print):
+def create_matrix(text, num_columns, num_rows, logger=print):
     matrix = [""] * num_rows
     for i in range(len(text)):
         row = i // num_columns
@@ -34,18 +34,18 @@ def create_matrix(text, key, num_columns, num_rows, logger=print):
 
 
 def encrypt(text, key, logger=print):
-    text = text.replace(" ", "")
-    key = key.replace(" ", "")
+    logger("Ключ:")
+    logger(key)
 
     key_unique = "".join(sorted(set(key), key=lambda x: key.index(x)))
     num_columns = len(key_unique)
     num_rows = math.ceil(len(text) / num_columns)
 
-    matrix = create_matrix(text, key, num_columns, num_rows, logger)
-
     transposed = sorted(zip(key_unique, range(num_columns)))
     logger("Сортировка ключа и индексы столбцов:")
     logger(transposed)
+
+    matrix = create_matrix(text, num_columns, num_rows, logger)
 
     encrypted_text = ""
     for row in matrix:
@@ -57,19 +57,12 @@ def encrypt(text, key, logger=print):
 
 
 def decrypt(cipher, key, logger=print):
-    key = key.replace(" ", "")
+    logger("Ключ:")
+    logger(key)
+
     key_unique = "".join(sorted(set(key), key=lambda x: key.index(x)))
     num_columns = len(key_unique)
     num_rows = math.ceil(len(cipher) / num_columns)
-
-    num_spaces = num_columns * num_rows - len(cipher)
-    not_empty_cols = num_columns - num_spaces
-    len_columns = [
-        num_rows if i < not_empty_cols else num_rows - 1 for i in range(num_columns)
-    ]
-
-    logger("длины столбцов")
-    logger(len_columns)
 
     transposed = sorted(zip(key_unique, range(num_columns)))
     logger("Сортировка ключа и индексы столбцов:")
@@ -85,14 +78,14 @@ def decrypt(cipher, key, logger=print):
                 matrix[i][col] = cipher[num_readed]
                 num_readed += 1
 
+    logger("Созданная матрица:")
+    for s in matrix:
+        logger("".join(s))
+
     decrypted_text = ""
     for row in matrix:
         for j in range(num_columns):
             if row[j] != "":
                 decrypted_text += row[j]
-
-    logger("Созданная матрица:")
-    for s in matrix:
-        logger("".join(s))
 
     return decrypted_text

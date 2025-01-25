@@ -100,7 +100,6 @@ def decrypt_text():
     with open(path_to_key, encoding="utf-8") as f:
         key = f.read().lower()
         key = "".join(i for i in key if i in cipher.ALL_CHARACTERS)
-        print(key)
 
     if cipher_text == "":
         messagebox.showerror("Ошибка", "Файл с текстом пуст")
