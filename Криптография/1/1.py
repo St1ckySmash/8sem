@@ -3,7 +3,6 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 import cipher
-import string
 
 
 def select_file(path_label):
@@ -40,7 +39,7 @@ def update_button_states():
 
 
 def encrypt_text():
-    log_text.delete(1.0, tk.END)  # Очистка поля для логов
+    log_text.delete(1.0, tk.END)
     path_to_open_text = open_text_path_label.cget("text")
     path_to_key = key_path_label.cget("text")
     path_to_save_encrypt_file = save_encrypt_path_label.cget("text")
@@ -80,7 +79,7 @@ def encrypt_text():
 
 
 def decrypt_text():
-    log_text.delete(1.0, tk.END)  # Очистка поля для логов
+    log_text.delete(1.0, tk.END)
     path_to_cipher_text = cipher_text_path_label.cget("text")
     path_to_key = key_path_label.cget("text")
     path_to_save_decrypt_file = save_decrypt_path_label.cget("text")
