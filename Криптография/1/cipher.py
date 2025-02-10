@@ -1,5 +1,4 @@
 import math
-import random
 import string
 
 ALL_CHARACTERS = (
@@ -8,18 +7,6 @@ ALL_CHARACTERS = (
     + string.digits
     + string.punctuation
 )
-
-
-def random_char_or_digit():
-    russian_letters_upper = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
-    russian_letters_lower = russian_letters_upper.lower()
-    all_characters = (
-        russian_letters_upper
-        + russian_letters_lower
-        + string.digits
-        + string.punctuation
-    )
-    return random.choice(all_characters)
 
 
 def create_matrix(text, num_columns, num_rows, logger=print):
