@@ -5,14 +5,73 @@ from tkinter import ttk
 from Crypto.Util.number import getPrime, bytes_to_long, long_to_bytes
 import random
 import string
+import math
 
 ALL_CHARACTERS = (
     "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".lower() + string.digits + string.punctuation
 )
+BIT_LENGTH = 337
+
+
+def is_prime(n, k=5):
+    """Тест Соловея-Штрассена для проверки простоты числа."""
+    # Проверяем базовые случаи
+    if n <= 1:
+        return False
+    if n <= 3:
+        return True
+    if n % 2 == 0:
+        return False
+
+    def mod_exp(base, exp, mod):
+        """Функция для вычисления возведения в степень по модулю."""
+        result = 1
+        base = base % mod
+        while exp > 0:
+            if (exp % 2) == 1:
+                result = (result * base) % mod
+            exp = exp >> 1
+            base = (base * base) % mod
+        return result
+
+    def jacobi_symbol(a, n):
+        """Функция для вычисления символа Якоби."""
+        if a == 0:
+            return 0
+        if a == 1:
+            return 1
+        if a % 2 == 0:
+            if ((n % 8) == 3) or ((n % 8) == 5):
+                return -jacobi_symbol(a // 2, n)
+            else:
+                return jacobi_symbol(a // 2, n)
+        if a % n == 0:
+            return 0
+        if (a % 4 == 3) and (n % 4 == 3):
+            return -jacobi_symbol(n % a, a)
+        else:
+            return jacobi_symbol(n % a, a)
+
+    # Запускаем тест k раз для увеличения точности
+    for _ in range(k):
+        a = random.randint(2, n - 1)
+        # Проверка НОД(a, n)
+        if math.gcd(a, n) > 1:
+            return False
+        jacobi = jacobi_symbol(a, n)
+        # Проверка условия Соловея-Штрассена
+        if jacobi == 0 or mod_exp(a, (n - 1) // 2, n) != (jacobi % n):
+            return False
+    return True
 
 
 def generate_keys(bit_length=2048):
-    p = getPrime(bit_length)
+    while True:
+        # Генерация случайного числа p
+        p = getPrime(bit_length)
+        # Проверка простоты числа p
+        if is_prime(p):
+            break
     g = random.randint(2, p - 2)
     x = random.randint(1, p - 2)
     y = pow(g, x, p)
@@ -49,82 +108,80 @@ def update_button_states():
     key_path_private = key_path_private_label.cget("text")
     cipher_text_path = cipher_text_path_label.cget("text")
 
-    if (
-        os.path.exists(key_path_open)
-        and key_path_open
-        and os.path.exists(key_path_private)
-        and key_path_private
-    ):
-        encrypt_button.config(
-            state=(
-                tk.NORMAL
-                if os.path.exists(open_text_path) and open_text_path
-                else tk.DISABLED
-            )
+    encrypt_button.config(
+        state=(
+            tk.NORMAL
+            if os.path.exists(key_path_open) and os.path.exists(open_text_path)
+            else tk.DISABLED
         )
-        decrypt_button.config(
-            state=(
-                tk.NORMAL
-                if os.path.exists(cipher_text_path) and cipher_text_path
-                else tk.DISABLED
-            )
+    )
+    decrypt_button.config(
+        state=(
+            tk.NORMAL
+            if os.path.exists(key_path_open)
+            and os.path.exists(key_path_private)
+            and os.path.exists(cipher_text_path)
+            else tk.DISABLED
         )
-    else:
-        encrypt_button.config(state=tk.DISABLED)
-        decrypt_button.config(state=tk.DISABLED)
+    )
+    generate_keys_button.config(
+        state=(
+            tk.NORMAL
+            if os.path.exists(key_path_open) and os.path.exists(key_path_private)
+            else tk.DISABLED
+        )
+    )
 
 
 def encrypt_text():
     log_text.delete(1.0, tk.END)
     path_to_open_text = open_text_path_label.cget("text")
-    path_to_key_open = key_path_open_label.cget("text")
-    path_to_key_private = key_path_private_label.cget("text")
+    path_to_key_public = key_path_open_label.cget("text")
     path_to_save_encrypt_file = save_encrypt_path_label.cget("text")
 
     if not os.path.exists(path_to_open_text) or not os.path.isfile(path_to_open_text):
         messagebox.showerror("Ошибка", "Файл с текстом не существует")
         return
-    if not os.path.exists(path_to_key_open) or not os.path.isfile(path_to_key_open):
+    if not os.path.exists(path_to_key_public) or not os.path.isfile(path_to_key_public):
         messagebox.showerror("Ошибка", "Файл с открытым ключом не существует")
-        return
-    if not os.path.exists(path_to_key_private) or not os.path.isfile(
-        path_to_key_private
-    ):
-        messagebox.showerror("Ошибка", "Файл с приватным ключом не существует")
         return
 
     with open(path_to_open_text, "rb") as f:
-        open_text = f.read()
-    with open(path_to_key_open, "r", encoding="utf-8") as f:
+        open_text = f.read().decode("utf-8").lower()
+        open_text = "".join(i for i in open_text if i in ALL_CHARACTERS)
+        print(
+            f"открытый текст {open_text}\n его длина в битах: {len(open_text.encode("utf-8"))*8}"
+        )
+        open_text = open_text.encode("utf-8")
+
+    with open(path_to_key_public, "r", encoding="utf-8") as f:
         p, g, y = map(int, f.read().strip().split())
         public_key = (p, g, y)
-    with open(path_to_key_private, "r", encoding="utf-8") as f:
-        private_key = int(f.read().strip())
 
     if not open_text:
         messagebox.showerror("Ошибка", "Файл с текстом пуст")
         return
     if not public_key:
-        messagebox.showerror("Ошибка", "Файл с ключом пуст")
+        messagebox.showerror("Ошибка", "Файл с открытым ключом пуст")
         return
 
     encrypted_text = encrypt(open_text, public_key)
     if path_to_save_encrypt_file:
-        with open(path_to_save_encrypt_file, "wb") as f:
-            f.write(bytes(str(encrypted_text), "utf-8"))
+        with open(path_to_save_encrypt_file, "w", encoding="utf-8") as f:
+            f.write(f"{encrypted_text[0]}\n{encrypted_text[1]}")
         messagebox.showinfo(
             "Успех", f"Зашифрованный текст сохранён в: {path_to_save_encrypt_file}"
         )
     else:
         result_text.delete(1.0, tk.END)
-        result_text.insert(tk.END, encrypted_text)
+        result_text.insert(tk.END, f"{encrypted_text[0]}\n{encrypted_text[1]}")
     log_text.insert(tk.END, f"Зашифрованный текст: {encrypted_text}\n")
 
 
 def decrypt_text():
     log_text.delete(1.0, tk.END)
     path_to_cipher_text = cipher_text_path_label.cget("text")
-    path_to_key_open = key_path_open_label.cget("text")
+    path_to_key_public = key_path_open_label.cget("text")
     path_to_key_private = key_path_private_label.cget("text")
     path_to_save_decrypt_file = save_decrypt_path_label.cget("text")
 
@@ -133,7 +190,7 @@ def decrypt_text():
     ):
         messagebox.showerror("Ошибка", "Файл с шифротекстом не существует")
         return
-    if not os.path.exists(path_to_key_open) or not os.path.isfile(path_to_key_open):
+    if not os.path.exists(path_to_key_public) or not os.path.isfile(path_to_key_public):
         messagebox.showerror("Ошибка", "Файл с открытым ключом не существует")
         return
     if not os.path.exists(path_to_key_private) or not os.path.isfile(
@@ -142,14 +199,19 @@ def decrypt_text():
         messagebox.showerror("Ошибка", "Файл с приватным ключом не существует")
         return
 
-    with open(path_to_cipher_text, "r", encoding="utf-8") as f:
-        a, b = map(int, f.read().strip().split())
-        cipher_text = (a, b)
-    with open(path_to_key_open, "r", encoding="utf-8") as f:
-        p, g, y = map(int, f.read().strip().split())
-        public_key = (p, g, y)
-    with open(path_to_key_private, "r", encoding="utf-8") as f:
-        private_key = int(f.read().strip())
+    try:
+        with open(path_to_cipher_text, "r", encoding="utf-8") as f:
+            a, b = map(int, f.read().strip().split())
+            cipher_text = (a, b)
+            print(f"шифртекст: {cipher_text}")
+        with open(path_to_key_public, "r", encoding="utf-8") as f:
+            p, g, y = map(int, f.read().strip().split())
+            public_key = (p, g, y)
+        with open(path_to_key_private, "r", encoding="utf-8") as f:
+            private_key = int(f.read().strip())
+    except ValueError as e:
+        messagebox.showerror("Ошибка", f"Некорректный формат данных в файле ключа: {e}")
+        return
 
     if not cipher_text:
         messagebox.showerror("Ошибка", "Файл с текстом пуст")
@@ -167,8 +229,44 @@ def decrypt_text():
         )
     else:
         result_text.delete(1.0, tk.END)
-        result_text.insert(tk.END, decrypted_text)
-    log_text.insert(tk.END, f"Расшифрованный текст: {decrypted_text.decode('utf-8')}\n")
+        try:
+            result_text.insert(tk.END, decrypted_text.decode("utf-8"))
+        except UnicodeDecodeError:
+            messagebox.showerror(
+                "Ошибка", "Не удалось декодировать расшифрованный текст"
+            )
+    log_text.insert(
+        tk.END, f"Расшифрованный текст: {decrypted_text.decode('utf-8', 'ignore')}\n"
+    )
+
+
+def generate_keys_action():
+    log_text.delete(1.0, tk.END)
+    path_to_key_public = key_path_open_label.cget("text")
+    path_to_key_private = key_path_private_label.cget("text")
+
+    if not os.path.exists(path_to_key_public) or not os.path.isfile(path_to_key_public):
+        messagebox.showerror("Ошибка", "Файл с открытым ключом не существует")
+        return
+    if not os.path.exists(path_to_key_private) or not os.path.isfile(
+        path_to_key_private
+    ):
+        messagebox.showerror("Ошибка", "Файл с приватным ключом не существует")
+        return
+
+    public_key, private_key = generate_keys(BIT_LENGTH)
+
+    with open(path_to_key_public, "w", encoding="utf-8") as f:
+        f.write(f"{public_key[0]}\n{public_key[1]}\n{public_key[2]}")
+    with open(path_to_key_private, "w", encoding="utf-8") as f:
+        f.write(str(private_key))
+
+    messagebox.showinfo(
+        "Успех",
+        f"Ключи сгенерированы и сохранены в файлы: 'public_key.txt' и 'private_key.txt'",
+    )
+    log_text.insert(tk.END, "Ключи сгенерированы и сохранены в файлы:\n")
+    log_text.insert(tk.END, "'public_key.txt' и 'private_key.txt'\n")
 
 
 root = tk.Tk()
@@ -209,6 +307,7 @@ right_frame = ttk.Frame(frame)
 right_frame.grid(row=0, column=1, sticky="nw")
 
 buttons_frame = ttk.Frame(frame)
+# buttons_frame.grid(row=0, column №№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№
 buttons_frame.grid(row=0, column=2, sticky="nw")
 
 open_text_label = ttk.Label(left_frame, text="Выберите файл с открытым текстом")
@@ -241,11 +340,7 @@ key_button_open = ttk.Button(
     command=lambda: select_file(key_path_open_label),
 )
 key_button_open.pack(anchor="w")
-key_path_open_label = ttk.Label(
-    left_frame, text=""
-)  #######################################################################
-
-
+key_path_open_label = ttk.Label(left_frame, text="")
 key_path_open_label.pack(anchor="w", pady=2)
 
 key_label_private = ttk.Label(left_frame, text="Выберите файл с приватным ключом")
@@ -329,6 +424,14 @@ class TextRedirector(object):
 import sys
 
 sys.stdout = TextRedirector(log_text)
+
+generate_keys_button = ttk.Button(
+    buttons_frame,
+    text="Сгенерировать ключи",
+    command=generate_keys_action,
+    state=tk.DISABLED,
+)
+generate_keys_button.pack(anchor="w", pady=10)
 
 encrypt_button = ttk.Button(
     buttons_frame, text="Зашифровать", command=encrypt_text, state=tk.DISABLED
