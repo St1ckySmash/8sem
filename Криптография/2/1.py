@@ -2,7 +2,37 @@ import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import ttk
-import cipher
+from Crypto.Util.number import getPrime, bytes_to_long, long_to_bytes
+import random
+import string
+
+ALL_CHARACTERS = (
+    "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".lower() + string.digits + string.punctuation
+)
+
+
+def generate_keys(bit_length=2048):
+    p = getPrime(bit_length)
+    g = random.randint(2, p - 2)
+    x = random.randint(1, p - 2)
+    y = pow(g, x, p)
+    return (p, g, y), x
+
+
+def encrypt(message, public_key):
+    p, g, y = public_key
+    k = random.randint(1, p - 2)
+    a = pow(g, k, p)
+    b = (bytes_to_long(message) * pow(y, k, p)) % p
+    return a, b
+
+
+def decrypt(ciphertext, private_key, public_key):
+    p, g, y = public_key
+    a, b = ciphertext
+    x = private_key
+    m = (b * pow(a, p - 1 - x, p)) % p
+    return long_to_bytes(m)
 
 
 def select_file(path_label):
@@ -15,10 +45,16 @@ def select_file(path_label):
 
 def update_button_states():
     open_text_path = open_text_path_label.cget("text")
-    key_path = key_path_label.cget("text")
+    key_path_open = key_path_open_label.cget("text")
+    key_path_private = key_path_private_label.cget("text")
     cipher_text_path = cipher_text_path_label.cget("text")
 
-    if os.path.exists(key_path) and key_path:
+    if (
+        os.path.exists(key_path_open)
+        and key_path_open
+        and os.path.exists(key_path_private)
+        and key_path_private
+    ):
         encrypt_button.config(
             state=(
                 tk.NORMAL
@@ -41,34 +77,41 @@ def update_button_states():
 def encrypt_text():
     log_text.delete(1.0, tk.END)
     path_to_open_text = open_text_path_label.cget("text")
-    path_to_key = key_path_label.cget("text")
+    path_to_key_open = key_path_open_label.cget("text")
+    path_to_key_private = key_path_private_label.cget("text")
     path_to_save_encrypt_file = save_encrypt_path_label.cget("text")
 
     if not os.path.exists(path_to_open_text) or not os.path.isfile(path_to_open_text):
         messagebox.showerror("Ошибка", "Файл с текстом не существует")
         return
-    if not os.path.exists(path_to_key) or not os.path.isfile(path_to_key):
-        messagebox.showerror("Ошибка", "Файл с ключом не существует")
+    if not os.path.exists(path_to_key_open) or not os.path.isfile(path_to_key_open):
+        messagebox.showerror("Ошибка", "Файл с открытым ключом не существует")
+        return
+    if not os.path.exists(path_to_key_private) or not os.path.isfile(
+        path_to_key_private
+    ):
+        messagebox.showerror("Ошибка", "Файл с приватным ключом не существует")
         return
 
-    with open(path_to_open_text, encoding="utf-8") as f:
-        open_text = f.read().lower()
-        open_text = "".join(i for i in open_text if i in cipher.ALL_CHARACTERS)
-    with open(path_to_key, encoding="utf-8") as f:
-        key = f.read().lower()
-        key = "".join(i for i in key if i in cipher.ALL_CHARACTERS)
+    with open(path_to_open_text, "rb") as f:
+        open_text = f.read()
+    with open(path_to_key_open, "r", encoding="utf-8") as f:
+        p, g, y = map(int, f.read().strip().split())
+        public_key = (p, g, y)
+    with open(path_to_key_private, "r", encoding="utf-8") as f:
+        private_key = int(f.read().strip())
 
-    if open_text == "":
+    if not open_text:
         messagebox.showerror("Ошибка", "Файл с текстом пуст")
         return
-    if key == "":
+    if not public_key:
         messagebox.showerror("Ошибка", "Файл с ключом пуст")
         return
 
-    encrypted_text = cipher.encrypt(open_text, key)
+    encrypted_text = encrypt(open_text, public_key)
     if path_to_save_encrypt_file:
-        with open(path_to_save_encrypt_file, "w", encoding="utf-8") as f:
-            f.write(encrypted_text)
+        with open(path_to_save_encrypt_file, "wb") as f:
+            f.write(bytes(str(encrypted_text), "utf-8"))
         messagebox.showinfo(
             "Успех", f"Зашифрованный текст сохранён в: {path_to_save_encrypt_file}"
         )
@@ -81,7 +124,8 @@ def encrypt_text():
 def decrypt_text():
     log_text.delete(1.0, tk.END)
     path_to_cipher_text = cipher_text_path_label.cget("text")
-    path_to_key = key_path_label.cget("text")
+    path_to_key_open = key_path_open_label.cget("text")
+    path_to_key_private = key_path_private_label.cget("text")
     path_to_save_decrypt_file = save_decrypt_path_label.cget("text")
 
     if not os.path.exists(path_to_cipher_text) or not os.path.isfile(
@@ -89,27 +133,34 @@ def decrypt_text():
     ):
         messagebox.showerror("Ошибка", "Файл с шифротекстом не существует")
         return
-    if not os.path.exists(path_to_key) or not os.path.isfile(path_to_key):
-        messagebox.showerror("Ошибка", "Файл с ключом не существует")
+    if not os.path.exists(path_to_key_open) or not os.path.isfile(path_to_key_open):
+        messagebox.showerror("Ошибка", "Файл с открытым ключом не существует")
+        return
+    if not os.path.exists(path_to_key_private) or not os.path.isfile(
+        path_to_key_private
+    ):
+        messagebox.showerror("Ошибка", "Файл с приватным ключом не существует")
         return
 
-    with open(path_to_cipher_text, encoding="utf-8") as f:
-        cipher_text = f.read().lower()
-        cipher_text = "".join(i for i in cipher_text if i in cipher.ALL_CHARACTERS)
-    with open(path_to_key, encoding="utf-8") as f:
-        key = f.read().lower()
-        key = "".join(i for i in key if i in cipher.ALL_CHARACTERS)
+    with open(path_to_cipher_text, "r", encoding="utf-8") as f:
+        a, b = map(int, f.read().strip().split())
+        cipher_text = (a, b)
+    with open(path_to_key_open, "r", encoding="utf-8") as f:
+        p, g, y = map(int, f.read().strip().split())
+        public_key = (p, g, y)
+    with open(path_to_key_private, "r", encoding="utf-8") as f:
+        private_key = int(f.read().strip())
 
-    if cipher_text == "":
+    if not cipher_text:
         messagebox.showerror("Ошибка", "Файл с текстом пуст")
         return
-    if key == "":
+    if not public_key:
         messagebox.showerror("Ошибка", "Файл с ключом пуст")
         return
 
-    decrypted_text = cipher.decrypt(cipher_text, key)
+    decrypted_text = decrypt(cipher_text, private_key, public_key)
     if path_to_save_decrypt_file:
-        with open(path_to_save_decrypt_file, "w", encoding="utf-8") as f:
+        with open(path_to_save_decrypt_file, "wb") as f:
             f.write(decrypted_text)
         messagebox.showinfo(
             "Успех", f"Расшифрованный текст сохранён в: {path_to_save_decrypt_file}"
@@ -117,7 +168,7 @@ def decrypt_text():
     else:
         result_text.delete(1.0, tk.END)
         result_text.insert(tk.END, decrypted_text)
-    log_text.insert(tk.END, f"Расшифрованный текст: {decrypted_text}\n")
+    log_text.insert(tk.END, f"Расшифрованный текст: {decrypted_text.decode('utf-8')}\n")
 
 
 root = tk.Tk()
@@ -182,16 +233,31 @@ cipher_text_button.pack(anchor="w")
 cipher_text_path_label = ttk.Label(left_frame, text="")
 cipher_text_path_label.pack(anchor="w", pady=2)
 
-key_label = ttk.Label(left_frame, text="Выберите файл с ключом")
-key_label.pack(anchor="w", pady=5)
-key_button = ttk.Button(
+key_label_open = ttk.Label(left_frame, text="Выберите файл с открытым ключом")
+key_label_open.pack(anchor="w", pady=5)
+key_button_open = ttk.Button(
     left_frame,
     text="Выбрать файл",
-    command=lambda: select_file(key_path_label),
+    command=lambda: select_file(key_path_open_label),
 )
-key_button.pack(anchor="w")
-key_path_label = ttk.Label(left_frame, text="")
-key_path_label.pack(anchor="w", pady=2)
+key_button_open.pack(anchor="w")
+key_path_open_label = ttk.Label(
+    left_frame, text=""
+)  #######################################################################
+
+
+key_path_open_label.pack(anchor="w", pady=2)
+
+key_label_private = ttk.Label(left_frame, text="Выберите файл с приватным ключом")
+key_label_private.pack(anchor="w", pady=5)
+key_button_private = ttk.Button(
+    left_frame,
+    text="Выбрать файл",
+    command=lambda: select_file(key_path_private_label),
+)
+key_button_private.pack(anchor="w")
+key_path_private_label = ttk.Label(left_frame, text="")
+key_path_private_label.pack(anchor="w", pady=2)
 
 save_encrypt_file_label = ttk.Label(
     right_frame, text="Выберите файл для сохранения зашифрованного текста"

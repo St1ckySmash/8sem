@@ -1,5 +1,10 @@
 from Crypto.Util.number import getPrime, bytes_to_long, long_to_bytes
 import random
+import string
+
+ALL_CHARACTERS = (
+    +"АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".lower() + string.digits + string.punctuation
+)
 
 
 def generate_keys(bit_length=2048):
