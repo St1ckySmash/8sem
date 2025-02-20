@@ -3,7 +3,6 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 from Crypto.Util.number import getPrime, bytes_to_long, long_to_bytes
-from sympy import isprime, primerange
 import random
 import string
 import math
@@ -73,34 +72,17 @@ def is_prime(n, k=5):
     return True
 
 
-def is_primitive_root(g, p):
-    required_set = {num for num in range(1, p) if gcd(num, p) == 1}
-    actual_set = {pow(g, powers, p) for powers in range(1, p)}
-    return required_set == actual_set
-
-
 def generate_keys(bit_length=2048):
     while True:
+        # Генерация случайного числа p
         p = getPrime(bit_length)
-        if isprime(p):
+        # Проверка простоты числа p
+        if is_prime(p):
             break
-
-    while True:
-        g = random.randint(2, p - 2)
-        if is_primitive_root(g, p):
-            break
-
+    g = random.randint(2, p - 2)
     x = random.randint(1, p - 2)
     y = pow(g, x, p)
-
     return (p, g, y), x
-
-
-# Функция для вычисления НОД
-def gcd(a, b):
-    while b:
-        a, b = b, a % b
-    return a
 
 
 def encrypt(message, public_key):
