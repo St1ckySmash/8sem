@@ -8,6 +8,7 @@ import random
 import string
 import math
 from multiprocessing import Pool, cpu_count
+import asyncio
 
 ALL_CHARACTERS = (
     "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".lower() + string.digits + string.punctuation
@@ -22,26 +23,21 @@ BIT_LENGTH = 338
 # ДОБАВИТЬ ВЫВОД ПРОМЕЖУТОЧНЫХ РЕЗУЛЬТАТОВ
 # ДОБАВИТЬ ВЫВОД ПРОМЕЖУТОЧНЫХ РЕЗУЛЬТАТОВ
 # ДОБАВИТЬ ВЫВОД ПРОМЕЖУТОЧНЫХ РЕЗУЛЬТАТОВ
+
+# def gcd(a, b):
+#     while b:
+#         a, b = b, a % b
+#     return a
+
+
 def is_prime(n, k=5):
     """Тест Соловея-Штрассена для проверки простоты числа."""
-    # Проверяем базовые случаи
     if n <= 1:
         return False
     if n <= 3:
         return True
     if n % 2 == 0:
         return False
-
-    def mod_exp(base, exp, mod):
-        """Функция для вычисления возведения в степень по модулю."""
-        result = 1
-        base = base % mod
-        while exp > 0:
-            if (exp % 2) == 1:
-                result = (result * base) % mod
-            exp = exp >> 1
-            base = (base * base) % mod
-        return result
 
     def jacobi_symbol(a, n):
         """Функция для вычисления символа Якоби."""
@@ -61,7 +57,6 @@ def is_prime(n, k=5):
         else:
             return jacobi_symbol(n % a, a)
 
-    # Запускаем тест k раз для увеличения точности
     for _ in range(k):
         a = random.randint(2, n - 1)
         # Проверка НОД(a, n)
@@ -69,15 +64,9 @@ def is_prime(n, k=5):
             return False
         jacobi = jacobi_symbol(a, n)
         # Проверка условия Соловея-Штрассена
-        if jacobi == 0 or mod_exp(a, (n - 1) // 2, n) != (jacobi % n):
+        if jacobi == 0 or pow(a, (n - 1) // 2, n) != (jacobi % n):
             return False
     return True
-
-
-import random
-import asyncio
-from sympy import isprime, primefactors
-from Crypto.Util.number import getPrime
 
 
 async def is_primitive_root(g, p, factors, phi):
@@ -95,7 +84,6 @@ async def find_primitive_root(p):
     phi = p - 1
     factors = primefactors(phi)
 
-    # Список задач для проверки кандидатов
     tasks = [
         asyncio.create_task(check_root(g, p, factors, phi))
         for g in range(2, min(50, p))
@@ -105,20 +93,19 @@ async def find_primitive_root(p):
         result = await task
         if result:
             for t in tasks:
-                t.cancel()  # Отменяем все остальные задачи
+                t.cancel()
             return result
 
     raise Exception("Примитивный корень не найден.")
 
 
-async def generate_keys_as(bit_length=2048):
+async def generate_keys_async(bit_length=2048):
     while True:
         q = getPrime(bit_length - 1)
         p = 2 * q + 1
         if is_prime(p):
             break
 
-    a = 11
     g = await find_primitive_root(p)
     x = random.randint(2, p - 2)
     y = pow(g, x, p)
@@ -131,45 +118,9 @@ async def generate_keys_as(bit_length=2048):
 def generate_keys(bit_length=2048):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    result = loop.run_until_complete(generate_keys_as(bit_length))
+    result = loop.run_until_complete(generate_keys_async(bit_length))
     loop.close()
     return result
-
-
-def generate_keys1(bit_length=2048):
-    while True:
-        q = getPrime(bit_length - 1)
-        p = 2 * q + 1
-        # if isprime(p):
-        if is_prime(p):
-            break
-
-    g = find_primitive_root(p)
-    x = random.randint(2, p - 2)
-    y = pow(g, x, p)
-
-    print(f"Сгенерированные ключи:\n p = {p}\n g = {g}\n y = {y}\n x = {x}")
-
-    return (p, g, y), x
-
-
-###
-# def find_primitive_root(p):
-# if not isprime(p):
-# raise ValueError("Число должно быть простым.")
-# phi = p - 1
-# factors = primefactors(phi)
-# for g in range(2, p):
-# if all(pow(g, phi // factor, p) != 1 for factor in factors):
-# return g
-# raise Exception("Примитивный корень не найден.")
-
-
-# Функция для вычисления НОД
-def gcd(a, b):
-    while b:
-        a, b = b, a % b
-    return a
 
 
 def encrypt(message, public_key):
@@ -188,6 +139,7 @@ def decrypt(ciphertext, private_key, public_key):
     return long_to_bytes(m)
 
 
+#######################################################################################################
 def select_file(path_label):
     file_path = filedialog.askopenfilename()
     if file_path:
