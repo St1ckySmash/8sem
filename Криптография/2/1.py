@@ -74,30 +74,69 @@ def is_prime(n, k=5):
     return True
 
 
-# def is_primitive_root(g, p):
-# if pow(g, (p - 1) // 2, p) == 1:
-# return False
-# q = (p - 1) // 2
-# if pow(g, q, p) == 1:
-# return False
-# return True
+import random
+import asyncio
+from sympy import isprime, primefactors
+from Crypto.Util.number import getPrime
 
 
-def is_primitive_root(g, p, factors, phi):
+async def is_primitive_root(g, p, factors, phi):
     return all(pow(g, phi // factor, p) != 1 for factor in factors)
 
 
-def find_primitive_root(p):
+async def check_root(g, p, factors, phi):
+    result = await is_primitive_root(g, p, factors, phi)
+    if result:
+        return g
+    return None
+
+
+async def find_primitive_root(p):
     phi = p - 1
     factors = primefactors(phi)
 
-    for g in range(2, min(50, p)):
-        if is_primitive_root(g, p, factors, phi):
-            return g
+    # Список задач для проверки кандидатов
+    tasks = [
+        asyncio.create_task(check_root(g, p, factors, phi))
+        for g in range(2, min(50, p))
+    ]
+
+    for task in asyncio.as_completed(tasks):
+        result = await task
+        if result:
+            for t in tasks:
+                t.cancel()  # Отменяем все остальные задачи
+            return result
+
     raise Exception("Примитивный корень не найден.")
 
 
+async def generate_keys_as(bit_length=2048):
+    while True:
+        q = getPrime(bit_length - 1)
+        p = 2 * q + 1
+        if is_prime(p):
+            break
+
+    a = 11
+    g = await find_primitive_root(p)
+    x = random.randint(2, p - 2)
+    y = pow(g, x, p)
+
+    print(f"Сгенерированные ключи:\n p = {p}\n g = {g}\n y = {y}\n x = {x}")
+
+    return (p, g, y), x
+
+
 def generate_keys(bit_length=2048):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    result = loop.run_until_complete(generate_keys_as(bit_length))
+    loop.close()
+    return result
+
+
+def generate_keys1(bit_length=2048):
     while True:
         q = getPrime(bit_length - 1)
         p = 2 * q + 1
