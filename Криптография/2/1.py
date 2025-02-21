@@ -190,14 +190,28 @@ def encrypt_text():
     if not os.path.exists(path_to_key_public) or not os.path.isfile(path_to_key_public):
         messagebox.showerror("Ошибка", "Файл с открытым ключом не существует")
         return
+    try:
+        with open(path_to_open_text, "rb") as f:
+            open_text = f.read().decode("utf-8").lower()
+            open_text = "".join(i for i in open_text if i in alphabet.ALL_CHARACTERS)
+        if len(open_text) < 1:
+            messagebox.showerror("Ошибка", "Файл с текстом пуст")
+            return
 
-    with open(path_to_open_text, "rb") as f:
-        open_text = f.read().decode("utf-8").lower()
-        open_text = "".join(i for i in open_text if i in alphabet.ALL_CHARACTERS)
-
-    with open(path_to_key_public, "r", encoding="utf-8") as f:
-        p, g, y = map(int, f.read().strip().split())
-        public_key = (p, g, y)
+    except ValueError as e:
+        messagebox.showerror(
+            "Ошибка", f"Некорректный формат данных в файле с открытым текстом: {e}"
+        )
+        return
+    try:
+        with open(path_to_key_public, "r", encoding="utf-8") as f:
+            p, g, y = map(int, f.read().strip().split())
+            public_key = (p, g, y)
+    except ValueError as e:
+        messagebox.showerror(
+            "Ошибка", f"Некорректный формат данных в файле открытого ключа: {e}"
+        )
+        return
 
     if not open_text:
         messagebox.showerror("Ошибка", "Файл с текстом пуст")
@@ -246,6 +260,13 @@ def decrypt_text():
             for line in f:
                 a, b = map(int, line.strip().split())
                 cipher_text.append((a, b))
+    except ValueError as e:
+        messagebox.showerror(
+            "Ошибка", f"Некорректный формат данных в файле с шифртекстом: {e}"
+        )
+        return
+
+    try:
         with open(path_to_key_public, "r", encoding="utf-8") as f:
             p, g, y = map(int, f.read().strip().split())
             public_key = (p, g, y)
