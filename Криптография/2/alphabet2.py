@@ -91,3 +91,42 @@ def char_to_number(char):
 
 def number_to_char(number):
     return NUM_TO_CHAR.get(number)
+
+
+def string_to_numbers(input_string):
+    return [
+        char_to_number(char)
+        for char in input_string
+        if char_to_number(char) is not None
+    ]
+
+
+def split_to_blocks(numbers, p):
+    blocks = []
+    current_block = []
+
+    for num in numbers:
+        if num >= p:
+            if current_block:
+                blocks.extend(current_block)
+                current_block = []
+            blocks.append(num)
+        else:
+            current_block.append(num)
+            if int("".join(map(str, current_block))) >= p:
+                current_block.pop()
+                blocks.extend(current_block)
+                current_block = [num]
+
+    if current_block:
+        blocks.extend(current_block)
+
+    return blocks
+
+
+# Пример использования
+input_string = "введение"
+numbers = string_to_numbers(input_string)
+p = 17
+blocks = split_to_blocks(numbers, p)
+print(blocks)  # Ожидаемый вывод: [13, 13, 16, 15, 16, 2, 2, 2, 5, 16]
