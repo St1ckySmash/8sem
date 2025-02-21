@@ -3,13 +3,11 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import simpledialog
 from tkinter import ttk
-from Crypto.Util.number import bytes_to_long, long_to_bytes
 from sympy import isprime, primefactors
 import random
-import string
 import math
 import asyncio
-import alphabet2
+import alphabet
 
 
 def is_prime(n, k=5):
@@ -102,10 +100,10 @@ def encrypt(message, public_key):
     p, g, y = public_key
     print(f"ключ: p = {public_key[0]} g = {public_key[1]} y = {public_key[2]}\n")
 
-    nums = alphabet2.string_to_numbers(message)
+    nums = alphabet.string_to_numbers(message)
     print(f"сопоставленные коды [{len(nums)}]: {nums}\n")
 
-    blocks = alphabet2.split_to_blocks(nums, p)
+    blocks = alphabet.split_to_blocks(nums, p)
     print(f"блоки[{len(blocks)}]: {blocks}\n")
 
     blocks_encrypted = []
@@ -124,24 +122,23 @@ def decrypt_block(ciphertext, p, x):
 
 def decrypt(ciphertext, private_key, public_key):
     print(f"шифртекст[{len(ciphertext)}]: {ciphertext}")
+    print(f"ключ: p = {public_key[0]} x = {private_key}\n")
 
     blocks = []
     for el in ciphertext:
         blocks.append(decrypt_block(el, public_key[0], private_key))
     print(f"блоки[{len(blocks)}]: {blocks}\n")
 
-    nums = alphabet2.split_to_two_digits(blocks)
+    nums = alphabet.split_to_two_digits(blocks)
     print(f"сопоставленные коды [{len(nums)}]: {nums}\n")
 
+    text = alphabet.numbers_to_string(nums)
+    print(f"расшифрованный текст [{len(text)}]:{text}")
 
-def decrypt1(ciphertext, private_key, public_key):
-    p, g, y = public_key
-    a, b = ciphertext
-    x = private_key
-    m = (b * pow(a, p - 1 - x, p)) % p
-    return long_to_bytes(m)
+    return text
 
 
+##########################################################################################
 def select_file(path_label):
     file_path = filedialog.askopenfilename()
     if file_path:
@@ -196,7 +193,7 @@ def encrypt_text():
 
     with open(path_to_open_text, "rb") as f:
         open_text = f.read().decode("utf-8").lower()
-        open_text = "".join(i for i in open_text if i in alphabet2.ALL_CHARACTERS)
+        open_text = "".join(i for i in open_text if i in alphabet.ALL_CHARACTERS)
 
     with open(path_to_key_public, "r", encoding="utf-8") as f:
         p, g, y = map(int, f.read().strip().split())
@@ -275,14 +272,11 @@ def decrypt_text():
     else:
         result_text.delete(1.0, tk.END)
         try:
-            result_text.insert(tk.END, decrypted_text.decode("utf-8"))
+            result_text.insert(tk.END, decrypted_text)
         except UnicodeDecodeError:
             messagebox.showerror(
                 "Ошибка", "Не удалось декодировать расшифрованный текст"
             )
-    log_text.insert(
-        tk.END, f"Расшифрованный текст: {decrypted_text.decode('utf-8', 'ignore')}\n"
-    )
 
 
 def generate_keys_action():
@@ -300,11 +294,11 @@ def generate_keys_action():
         return
 
     p = int(simpledialog.askstring("Введите p", "Введите простое число p:"))
-    if not is_prime(p):
-        messagebox.showerror("Ошибка", "Число p не является простым")
-        return
     if p < 11:
         messagebox.showerror("Ошибка", "Число должно быть больше 7")
+        return
+    if not is_prime(p):
+        messagebox.showerror("Ошибка", "Число p не является простым")
         return
 
     public_key, private_key = generate_keys(p)
