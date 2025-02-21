@@ -9,11 +9,7 @@ import random
 import string
 import math
 import asyncio
-
-ALL_CHARACTERS = (
-    "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".lower() + string.digits + string.punctuation
-)
-BIT_LENGTH = 338
+import alphabet
 
 
 def is_prime(n, k=5):
@@ -94,6 +90,8 @@ def generate_keys(p):
 
 
 def encrypt(message, public_key):
+
+    # def encrypt1(message, public_key):
     p, g, y = public_key
     k = random.randint(1, p - 2)
     a = pow(g, k, p)
@@ -163,7 +161,7 @@ def encrypt_text():
 
     with open(path_to_open_text, "rb") as f:
         open_text = f.read().decode("utf-8").lower()
-        open_text = "".join(i for i in open_text if i in ALL_CHARACTERS)
+        open_text = "".join(i for i in open_text if i in alphabet.ALL_CHARACTERS)
         print(
             f"открытый текст {open_text}\n его длина в битах: {len(open_text.encode("utf-8"))*8}"
         )
