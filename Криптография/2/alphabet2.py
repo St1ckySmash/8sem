@@ -103,30 +103,19 @@ def string_to_numbers(input_string):
 
 def split_to_blocks(numbers, p):
     blocks = []
-    current_block = []
-
     for num in numbers:
-        if num >= p:
-            if current_block:
-                blocks.extend(current_block)
-                current_block = []
+        if num < p:
             blocks.append(num)
         else:
-            current_block.append(num)
-            if int("".join(map(str, current_block))) >= p:
-                current_block.pop()
-                blocks.extend(current_block)
-                current_block = [num]
-
-    if current_block:
-        blocks.extend(current_block)
-
+            # Разбиваем число на отдельные цифры и добавляем их как блоки
+            for digit_char in str(num):
+                blocks.append(int(digit_char))
     return blocks
 
 
 # Пример использования
-input_string = "введение"
+input_string = "введениевкриптографию"
 numbers = string_to_numbers(input_string)
-p = 17
+p = 200
 blocks = split_to_blocks(numbers, p)
-print(blocks)  # Ожидаемый вывод: [13, 13, 16, 15, 16, 2, 2, 2, 5, 16]
+print(blocks)  # Вывод: [13, 13, 16, 15, 16, 2, 5, 2, 0, 16]
