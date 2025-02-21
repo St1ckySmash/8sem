@@ -1,19 +1,25 @@
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from tkinter import simpledialog
 from tkinter import ttk
-from Crypto.Util.number import bytes_to_long, long_to_bytes
+from Crypto.Util.number import getPrime, bytes_to_long, long_to_bytes
 from sympy import isprime, primefactors
 import random
 import string
 import math
+from multiprocessing import Pool, cpu_count
 import asyncio
 
 ALL_CHARACTERS = (
     "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".lower() + string.digits + string.punctuation
 )
 BIT_LENGTH = 338
+
+
+# def gcd(a, b):
+#     while b:
+#         a, b = b, a % b
+#     return a
 
 
 def is_prime(n, k=5):
@@ -83,14 +89,28 @@ async def find_primitive_root(p):
     raise Exception("Примитивный корень не найден.")
 
 
-def generate_keys(p):
-    g = asyncio.run(find_primitive_root(p))
+async def generate_keys_async(bit_length=2048):
+    while True:
+        q = getPrime(bit_length - 1)
+        p = 2 * q + 1
+        if is_prime(p):
+            break
+
+    g = await find_primitive_root(p)
     x = random.randint(2, p - 2)
     y = pow(g, x, p)
 
     print(f"Сгенерированные ключи:\n p = {p}\n g = {g}\n y = {y}\n x = {x}")
 
     return (p, g, y), x
+
+
+def generate_keys(bit_length=2048):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    result = loop.run_until_complete(generate_keys_async(bit_length))
+    loop.close()
+    return result
 
 
 def encrypt(message, public_key):
@@ -109,6 +129,7 @@ def decrypt(ciphertext, private_key, public_key):
     return long_to_bytes(m)
 
 
+#######################################################################################################
 def select_file(path_label):
     file_path = filedialog.askopenfilename()
     if file_path:
@@ -269,15 +290,7 @@ def generate_keys_action():
         messagebox.showerror("Ошибка", "Файл с приватным ключом не существует")
         return
 
-    p = int(simpledialog.askstring("Введите p", "Введите простое число p:"))
-    if not is_prime(p):
-        messagebox.showerror("Ошибка", "Число p не является простым")
-        return
-    if p < 11:
-        messagebox.showerror("Ошибка", "Число должно быть больше 7")
-        return
-
-    public_key, private_key = generate_keys(p)
+    public_key, private_key = generate_keys(BIT_LENGTH)
 
     with open(path_to_key_public, "w", encoding="utf-8") as f:
         f.write(f"{public_key[0]}\n{public_key[1]}\n{public_key[2]}")
@@ -331,6 +344,7 @@ if __name__ == "__main__":
     right_frame.grid(row=0, column=1, sticky="nw")
 
     buttons_frame = ttk.Frame(frame)
+    # buttons_frame.grid(row=0, column №№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№№
     buttons_frame.grid(row=0, column=2, sticky="nw")
 
     open_text_label = ttk.Label(left_frame, text="Выберите файл с открытым текстом")
@@ -366,7 +380,6 @@ if __name__ == "__main__":
     key_path_open_label = ttk.Label(left_frame, text="")
     key_path_open_label.pack(anchor="w", pady=2)
 
-    # №№№№№№№№№№№№№№№№№№№№№№№№№№№№№
     key_label_private = ttk.Label(left_frame, text="Выберите файл с приватным ключом")
     key_label_private.pack(anchor="w", pady=5)
     key_button_private = ttk.Button(
