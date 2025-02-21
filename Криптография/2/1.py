@@ -9,7 +9,7 @@ import random
 import string
 import math
 import asyncio
-import alphabet
+import alphabet2
 
 
 def is_prime(n, k=5):
@@ -89,17 +89,52 @@ def generate_keys(p):
     return (p, g, y), x
 
 
-def encrypt(message, public_key):
-
-    # def encrypt1(message, public_key):
-    p, g, y = public_key
+def encrypt_block(num_block, p, g, y):
     k = random.randint(1, p - 2)
     a = pow(g, k, p)
-    b = (bytes_to_long(message) * pow(y, k, p)) % p
+    b = (num_block * pow(y, k, p)) % p
     return a, b
 
 
+def encrypt(message, public_key):
+    print(f"открытый текст [{len(message)}]:{message}")
+
+    p, g, y = public_key
+    print(f"ключ: p = {public_key[0]} g = {public_key[1]} y = {public_key[2]}\n")
+
+    nums = alphabet2.string_to_numbers(message)
+    print(f"сопоставленные коды [{len(nums)}]: {nums}\n")
+
+    blocks = alphabet2.split_to_blocks(nums, p)
+    print(f"блоки[{len(blocks)}]: {blocks}\n")
+
+    blocks_encrypted = []
+    for el in blocks:
+        blocks_encrypted.append(encrypt_block(el, p, g, y))
+    print(f"блоки шифртекста [{len(blocks_encrypted)}]: {blocks_encrypted}")
+
+    return blocks_encrypted
+
+
+def decrypt_block(ciphertext, p, x):
+    a, b = ciphertext
+    m = (b * pow(a, p - 1 - x, p)) % p
+    return m
+
+
 def decrypt(ciphertext, private_key, public_key):
+    print(f"шифртекст[{len(ciphertext)}]: {ciphertext}")
+
+    blocks = []
+    for el in ciphertext:
+        blocks.append(decrypt_block(el, public_key[0], private_key))
+    print(f"блоки[{len(blocks)}]: {blocks}\n")
+
+    nums = alphabet2.split_to_two_digits(blocks)
+    print(f"сопоставленные коды [{len(nums)}]: {nums}\n")
+
+
+def decrypt1(ciphertext, private_key, public_key):
     p, g, y = public_key
     a, b = ciphertext
     x = private_key
@@ -161,11 +196,7 @@ def encrypt_text():
 
     with open(path_to_open_text, "rb") as f:
         open_text = f.read().decode("utf-8").lower()
-        open_text = "".join(i for i in open_text if i in alphabet.ALL_CHARACTERS)
-        print(
-            f"открытый текст {open_text}\n его длина в битах: {len(open_text.encode("utf-8"))*8}"
-        )
-        open_text = open_text.encode("utf-8")
+        open_text = "".join(i for i in open_text if i in alphabet2.ALL_CHARACTERS)
 
     with open(path_to_key_public, "r", encoding="utf-8") as f:
         p, g, y = map(int, f.read().strip().split())
@@ -181,14 +212,14 @@ def encrypt_text():
     encrypted_text = encrypt(open_text, public_key)
     if path_to_save_encrypt_file:
         with open(path_to_save_encrypt_file, "w", encoding="utf-8") as f:
-            f.write(f"{encrypted_text[0]}\n{encrypted_text[1]}")
+            for i in range(len(encrypted_text)):
+                f.write(f"{encrypted_text[i][0]} {encrypted_text[i][1]}\n")
         messagebox.showinfo(
             "Успех", f"Зашифрованный текст сохранён в: {path_to_save_encrypt_file}"
         )
     else:
         result_text.delete(1.0, tk.END)
         result_text.insert(tk.END, f"{encrypted_text[0]}\n{encrypted_text[1]}")
-    log_text.insert(tk.END, f"Зашифрованный текст: {encrypted_text}\n")
 
 
 def decrypt_text():
@@ -213,10 +244,11 @@ def decrypt_text():
         return
 
     try:
+        cipher_text = []
         with open(path_to_cipher_text, "r", encoding="utf-8") as f:
-            a, b = map(int, f.read().strip().split())
-            cipher_text = (a, b)
-            print(f"шифртекст: {cipher_text}")
+            for line in f:
+                a, b = map(int, line.strip().split())
+                cipher_text.append((a, b))
         with open(path_to_key_public, "r", encoding="utf-8") as f:
             p, g, y = map(int, f.read().strip().split())
             public_key = (p, g, y)
@@ -284,10 +316,10 @@ def generate_keys_action():
 
     messagebox.showinfo(
         "Успех",
-        f"Ключи сгенерированы и сохранены в файлы: 'public_key.txt' и 'private_key.txt'",
+        f"Ключи сгенерированы и сохранены в файлы: '{path_to_key_public}' и '{path_to_key_private}'",
     )
     log_text.insert(tk.END, "Ключи сгенерированы и сохранены в файлы:\n")
-    log_text.insert(tk.END, "'public_key.txt' и 'private_key.txt'\n")
+    log_text.insert(tk.END, f"'{path_to_key_public}' и '{path_to_key_private}'\n")
 
 
 if __name__ == "__main__":
