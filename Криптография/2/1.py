@@ -60,7 +60,8 @@ async def check_root(g, p, factors, phi):
 
 async def find_primitive_root(p):
     phi = p - 1
-    factors = primefactors(phi)
+    # factors = primefactors(phi)
+    factors = prime_factors(phi)
 
     tasks = [
         asyncio.create_task(check_root(g, p, factors, phi))
@@ -75,6 +76,20 @@ async def find_primitive_root(p):
             return result
 
     raise Exception("Примитивный корень не найден.")
+
+
+def prime_factors(n):
+    i = 2
+    factors = []
+    while i * i <= n:
+        if n % i:
+            i += 1
+        else:
+            n //= i
+            factors.append(i)
+    if n > 1:
+        factors.append(n)
+    return factors
 
 
 def generate_keys(p):
