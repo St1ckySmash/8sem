@@ -301,7 +301,7 @@ def decrypt_text():
     decrypted_text = decrypt(cipher_text, private_key, public_key)
     if path_to_save_decrypt_file:
         with open(path_to_save_decrypt_file, "wb") as f:
-            f.write(decrypted_text)
+            f.write(decrypted_text.encode())
         messagebox.showinfo(
             "Успех", f"Расшифрованный текст сохранён в: {path_to_save_decrypt_file}"
         )
@@ -328,8 +328,11 @@ def generate_keys_action():
     ):
         messagebox.showerror("Ошибка", "Файл с приватным ключом не существует")
         return
-
-    p = int(simpledialog.askstring("Введите p", "Введите простое число p:"))
+    try:
+        p = int(simpledialog.askstring("Введите p", "Введите простое число p:"))
+    except ValueError:
+        messagebox.showerror("Ошибка", "Некорректный ввод")
+        return
     if p < 11:
         messagebox.showerror("Ошибка", "Число должно быть больше 7")
         return
