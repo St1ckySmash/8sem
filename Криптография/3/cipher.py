@@ -6,6 +6,7 @@ ALL_CHARACTERS = (
     + "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".lower()
     + string.digits
     + string.punctuation
+    + " "
 )
 
 

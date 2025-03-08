@@ -46,11 +46,12 @@ def encrypt_text():
         lines = f.readlines()
         processed_lines = []
         for line in lines:
-            line_clean = line.rstrip("\n").lower()
+            line_clean = line.rstrip("\n")
             line_clean = "".join(
                 [char for char in line_clean if char in cipher.ALL_CHARACTERS]
             )
-            processed_lines.append(line_clean)
+            if line_clean:
+                processed_lines.append(line_clean)
 
     if not any(processed_lines):
         messagebox.showerror("Ошибка", "Файл с текстом пуст после фильтрации")
