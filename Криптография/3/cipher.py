@@ -9,70 +9,52 @@ ALL_CHARACTERS = (
 )
 
 
-def create_matrix(text, num_columns, num_rows, logger=print):
-    matrix = [""] * num_rows
-    for i in range(len(text)):
-        row = i // num_columns
-        matrix[row] += text[i]
-    logger("Созданная матрица:")
-    for s in matrix:
-        logger(s)
-    return matrix
+def encrypt(text_arr):
+    print(text_arr)
+    new_arr = [[] for _ in range(4)]  # Создаём 4 пустых подмассива
+
+    # Распределяем строки по 4 группам
+    for i, text in enumerate(text_arr):
+        new_arr[i % 4].append(text)
+
+    # Объединяем группы в нужном порядке: 2, 3, 0, 1
+    result = []
+    result.extend(new_arr[2])
+    result.extend(new_arr[3])
+    result.extend(new_arr[0])
+    result.extend(new_arr[1])
+
+    return result
 
 
-def encrypt(text, key, logger=print):
-    logger("Ключ:")
-    logger(key)
+def decrypt(encrypted_arr):
+    n = len(encrypted_arr)
+    group_sizes = [(n + 3 - k) // 4 for k in range(4)]
 
-    key_unique = "".join(sorted(set(key), key=lambda x: key.index(x)))
-    num_columns = len(key_unique)
-    num_rows = math.ceil(len(text) / num_columns)
+    # Разделяем зашифрованный массив на группы в порядке 2 → 3 → 0 → 1
+    group2 = encrypted_arr[: group_sizes[2]]
+    group3 = encrypted_arr[group_sizes[2] : group_sizes[2] + group_sizes[3]]
+    group0 = encrypted_arr[
+        group_sizes[2]
+        + group_sizes[3] : group_sizes[2]
+        + group_sizes[3]
+        + group_sizes[0]
+    ]
+    group1 = encrypted_arr[group_sizes[2] + group_sizes[3] + group_sizes[0] :]
 
-    transposed = sorted(zip(key_unique, range(num_columns)))
-    logger("Сортировка ключа и индексы столбцов:")
-    logger(transposed)
+    # Восстанавливаем исходный порядок
+    result = []
+    for i in range(n):
+        remainder = i % 4
+        group_idx = i // 4
 
-    matrix = create_matrix(text, num_columns, num_rows, logger)
+        if remainder == 0:
+            result.append(group0[group_idx])
+        elif remainder == 1:
+            result.append(group1[group_idx])
+        elif remainder == 2:
+            result.append(group2[group_idx])
+        else:  # remainder == 3
+            result.append(group3[group_idx])
 
-    encrypted_text = ""
-    for row in matrix:
-        for _, col in transposed:
-            if col < len(row):
-                encrypted_text += row[col]
-
-    return encrypted_text
-
-
-def decrypt(cipher, key, logger=print):
-    logger("Ключ:")
-    logger(key)
-
-    key_unique = "".join(sorted(set(key), key=lambda x: key.index(x)))
-    num_columns = len(key_unique)
-    num_rows = math.ceil(len(cipher) / num_columns)
-
-    transposed = sorted(zip(key_unique, range(num_columns)))
-    logger("Сортировка ключа и индексы столбцов:")
-    logger(transposed)
-
-    matrix = [["" for _ in range(num_columns)] for _ in range(num_rows)]
-
-    num_readed = 0
-    for i in range(num_rows):
-        for j in range(num_columns):
-            if num_readed < len(cipher):
-                _, col = transposed[j]
-                matrix[i][col] = cipher[num_readed]
-                num_readed += 1
-
-    logger("Созданная матрица:")
-    for s in matrix:
-        logger("".join(s))
-
-    decrypted_text = ""
-    for row in matrix:
-        for j in range(num_columns):
-            if row[j] != "":
-                decrypted_text += row[j]
-
-    return decrypted_text
+    return result
