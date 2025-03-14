@@ -86,7 +86,8 @@ def decrypt_text():
         lines = f.readlines()
         processed_lines = []
         for line in lines:
-            line_clean = line.rstrip("\n").lower()
+            # line_clean = line.rstrip("\n").lower()
+            line_clean = line.rstrip("\n")
             line_clean = "".join(
                 [char for char in line_clean if char in cipher.ALL_CHARACTERS]
             )
@@ -99,7 +100,7 @@ def decrypt_text():
     decrypted_text = cipher.decrypt(processed_lines)
     if path_to_save_decrypt_file:
         with open(path_to_save_decrypt_file, "w", encoding="utf-8") as f:
-            f.write(decrypted_text)
+            f.write("\n".join(decrypted_text))
         messagebox.showinfo(
             "Успех", f"Расшифрованный текст сохранён в: {path_to_save_decrypt_file}"
         )
